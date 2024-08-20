@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestLog - Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .feature-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">QuestLog</h1>
+            <div>
+                <a href="/" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                <a href="/quests" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Quests</a>
+                <a href="/status" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Status</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto mt-8 px-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+        <div class="bg-gray-700 p-8 rounded-lg mb-12 text-center">
+            <h1 class="text-4xl font-bold mb-4">Welcome to QuestLog</h1>
+            <p class="text-xl mb-6">Your personal productivity tool to track and manage your quests and goals.</p>
+            <a href="/journal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300">
+                Start a New Journal Entry
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            <div class="feature-card rounded-lg p-6 text-center">
+                <i class="fas fa-book text-4xl text-blue-400 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Daily Journal</h3>
+                <p class="text-gray-400 mb-4">Document your thoughts and progress each day. Let QuestLog categorize and organize your entries.</p>
+                <a href="/journal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">Go to Journal</a>
+            </div>
+            <div class="feature-card rounded-lg p-6 text-center">
+                <i class="fas fa-tasks text-4xl text-green-400 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Manage Quests</h3>
+                <p class="text-gray-400 mb-4">Create, view, and edit your quests. Track your progress and stay on top of your goals.</p>
+                <a href="/quests" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300">View Quests</a>
+            </div>
+            <div class="feature-card rounded-lg p-6 text-center">
+                <i class="fas fa-check-circle text-4xl text-yellow-400 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Tasks & Updates</h3>
+                <p class="text-gray-400 mb-4">View and manage your tasks. Keep track of your quest updates and accomplishments.</p>
+                <a href="/tasks" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition duration-300">View Tasks</a>
+            </div>
+            <div class="feature-card rounded-lg p-6 text-center">
+                <i class="fas fa-chart-line text-4xl text-purple-400 mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Status</h3>
+                <p class="text-gray-400 mb-4">View an overview of your current situation and stats.</p>
+                <a href="/status" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300">View Status</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 text-center">
+        <p>&copy; 2024 QuestLog. All Rights Reserved. | <a href="#" class="text-blue-400 hover:text-blue-300">Privacy Policy</a> | <a href="#" class="text-blue-400 hover:text-blue-300">Terms of Service</a></p>
+    </footer>
+</body>
+</html>

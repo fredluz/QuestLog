@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Quest Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .stat-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .quest-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+        }
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #4b5563;
+        }
+        .progress-value {
+            height: 100%;
+            border-radius: 4px;
+            background-color: #10b981;
+        }
+        .emotion-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .emotion-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">Life Quest</h1>
+            <div>
+                <a href="/" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                <a href="/quests" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Quests</a>
+                <a href="/status" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">Status</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto mt-8 px-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <h2 class="text-3xl font-bold mb-6">Life Status Overview</h2>
+        <div class="bg-gray-700 p-6 rounded-lg mb-8">
+            <p class="text-xl">{{ life_overview.overall_status }}</p>
+        </div>
+
+        <h3 class="text-2xl font-bold mb-4">Psychological Analysis</h3>
+        <div class="bg-gray-700 p-6 rounded-lg mb-8">
+            <p class="text-xl">{{ life_overview.psychological_analysis }}</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div>
+                <h3 class="text-2xl font-bold mb-4">Key Stats</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for stat in life_overview.key_stats %}
+                    <div class="stat-card p-4">
+                        <h4 class="text-lg font-semibold mb-2">{{ stat.name }}</h4>
+                        <p class="text-3xl font-bold text-emerald-400 mb-2">{{ stat.value }}</p>
+                        <p class="text-sm text-gray-400">{{ stat.description }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold mb-4">Life Areas</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for area in life_overview.life_areas %}
+                    <div class="stat-card p-4">
+                        <h4 class="text-lg font-semibold mb-2">{{ area.area }}</h4>
+                        <p class="text-sm text-gray-400">{{ area.status }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-2xl font-bold mb-4">Emotional States</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {% for emotion in life_overview.emotional_states %}
+            <div class="emotion-card p-4">
+                <h4 class="text-lg font-semibold mb-2">{{ emotion.emotion }}</h4>
+                <p class="text-3xl font-bold text-blue-400 mb-2">{{ emotion.intensity }}/10</p>
+                <p class="text-sm text-gray-400">{{ emotion.description }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <h3 class="text-2xl font-bold mb-4">Active Quests</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {% for quest in life_overview.active_quests %}
+            <div class="quest-card p-4">
+                <h4 class="text-lg font-semibold mb-2">{{ quest.title }}</h4>
+                <p class="text-sm text-gray-400 mb-4">{{ quest.progress }}</p>
+                <div class="progress-bar">
+                    <div class="progress-value" style="width: 25%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <h3 class="text-2xl font-bold mb-4">Recent Journal Entries</h3>
+        <div class="bg-gray-800 rounded-lg overflow-hidden">
+            {% for entry in journal_entries %}
+            <div class="p-4 {% if not loop.last %}border-b border-gray-700{% endif %}">
+                <p class="text-sm text-gray-400 mb-1">{{ entry.date.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p class="text-gray-300">{{ entry.content[:100] }}{% if entry.content|length > 100 %}...{% endif %}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

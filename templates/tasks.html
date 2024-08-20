@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestLog - Tasks</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .task-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">QuestLog</h1>
+            <div>
+                <a href="/" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                <a href="/quests" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Quests</a>
+                <a href="/tasks" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">Tasks</a>
+                <a href="/status" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Status</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto mt-8 px-4">
+        <h2 class="text-3xl font-bold mb-6">Tasks Overview</h2>
+
+        {% for quest_title, tasks in tasks_by_quest.items() %}
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4">{{ quest_title }}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for task in tasks %}
+                <div class="task-card p-4 rounded-lg">
+                    <h4 class="text-lg font-semibold mb-2">{{ task.content }}</h4>
+                    <p class="text-sm text-gray-400 mb-2">
+                        Due: {{ task.scheduled_date.strftime('%Y-%m-%d') if task.scheduled_date else 'No deadline' }}
+                    </p>
+                    <div class="flex items-center">
+                        <span class="text-sm mr-2">Status:</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ 'bg-green-600' if task.completed else 'bg-yellow-600' }}">
+                            {{ 'Completed' if task.completed else 'Pending' }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 text-center mt-12">
+        <p>&copy; 2024 QuestLog. All Rights Reserved. | <a href="#" class="text-blue-400 hover:text-blue-300">Privacy Policy</a> | <a href="#" class="text-blue-400 hover:text-blue-300">Terms of Service</a></p>
+    </footer>
+</body>
+</html>

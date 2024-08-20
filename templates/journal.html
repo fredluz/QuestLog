@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestLog - Journal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .journal-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        .journal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">QuestLog</h1>
+            <div>
+                <a href="/" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                <a href="/quests" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Quests</a>
+                <a href="/status" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Status</a>
+                <a href="/journal" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">Journal</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto mt-8 px-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+        <h2 class="text-3xl font-bold mb-6">Journal</h2>
+
+        <div class="bg-gray-700 p-6 rounded-lg mb-8">
+            <h3 class="text-xl font-semibold mb-4">New Journal Entry</h3>
+            <form action="/journal" method="POST">
+                <textarea name="content" rows="5" class="w-full p-2 mb-4 bg-gray-800 text-white rounded" placeholder="Write your thoughts here..."></textarea>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    Add Entry
+                </button>
+            </form>
+        </div>
+
+        <h3 class="text-2xl font-bold mb-4">Previous Entries</h3>
+        <div class="grid gap-6">
+            {% for entry in entries %}
+            <div class="journal-card rounded-lg p-6">
+                <p class="text-gray-300 mb-2">{{ entry.content }}</p>
+                <p class="text-sm text-gray-400">{{ entry.date.strftime('%d/%m/%y %H:%M:%S') }}</p>
+                <form action="{{ url_for('delete_journal_entry', entry_id=entry.id) }}" method="POST" class="mt-2">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm transition duration-300">
+                        Delete
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 text-center mt-8">
+        <p>&copy; 2024 QuestLog. All Rights Reserved. | <a href="#" class="text-blue-400 hover:text-blue-300">Privacy Policy</a> | <a href="#" class="text-blue-400 hover:text-blue-300">Terms of Service</a></p>
+    </footer>
+</body>
+<script>
+</script>
+</html>
