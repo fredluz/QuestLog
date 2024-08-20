@@ -64,32 +64,38 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for quest in quests %}
             <div class="quest-card rounded-lg p-6">
-                <h3 class="text-xl font-semibold mb-2">
-                    <a href="{{ url_for('quest_details', quest_id=quest.id) }}" class="text-blue-400 hover:text-blue-300">{{ quest.title }}</a>
-                </h3>
-                <p class="text-gray-400 mb-4">{{ quest.description[:100] }}{% if quest.description|length > 100 %}...{% endif %}</p>
-                <div class="mb-4">
-                    <h4 class="text-lg font-semibold mb-2">Tasks</h4>
-                    <ul class="space-y-2">
-                        {% for task in quest.get_tasks()[:3] %}
-                        <li class="flex justify-between items-center">
-                            <span>{{ task.content }}</span>
-                            <span class="text-sm {{ 'text-green-400' if task.completed else 'text-yellow-400' }}">
-                                {{ 'Completed' if task.completed else task.scheduled_date.strftime('%d/%m/%y') if task.scheduled_date else 'Ongoing' }}
-                            </span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% if quest.get_tasks()|length > 3 %}
-                    <p class="text-sm text-gray-400 mt-2">And {{ quest.get_tasks()|length - 3 }} more tasks...</p>
-                    {% endif %}
-                </div>
-                <button onclick="openAddTaskModal(this)" data-quest-id="{{ quest.id }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300">
-                    <i class="fas fa-plus mr-2"></i>Add Task
-                </button>
+              <h3 class="text-xl font-semibold mb-2">
+                <a href="{{ url_for('quest_details', quest_id=quest.id) }}" class="text-blue-400 hover:text-blue-300">{{ quest.title }}</a>
+              </h3>
+              <p class="text-gray-400 mb-4">
+                {% if quest.get_current_description() %}
+                  {{ quest.get_current_description() }}
+                {% else %}
+                  No description available
+                {% endif %}
+              </p>
+              <div class="mb-4">
+                <h4 class="text-lg font-semibold mb-2">Tasks</h4>
+                <ul class="space-y-2">
+                  {% for task in quest.get_tasks()[:3] %}
+                  <li class="flex justify-between items-center">
+                    <span>{{ task.content }}</span>
+                    <span class="text-sm {{ 'text-green-400' if task.completed else 'text-yellow-400' }}">
+                      {{ 'Completed' if task.completed else task.scheduled_date.strftime('%d/%m/%y') if task.scheduled_date else 'Ongoing' }}
+                    </span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% if quest.get_tasks()|length > 3 %}
+                <p class="text-sm text-gray-400 mt-2">And {{ quest.get_tasks()|length - 3 }} more tasks...</p>
+                {% endif %}
+              </div>
+              <button onclick="openAddTaskModal(this)" data-quest-id="{{ quest.id }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                <i class="fas fa-plus mr-2"></i>Add Task
+              </button>
             </div>
             {% endfor %}
-        </div>
+          </div>
     </main>
 
     <!-- Add Quest Modal -->

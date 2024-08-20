@@ -22,10 +22,10 @@ OpenAI.api_key = openai_api_key
 # Database Models
 class Quest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.Text(100), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
     tasks = db.relationship('Task', backref='quest', lazy=True, cascade="all, delete-orphan")
     memos = db.relationship('Memo', backref='quest', lazy=True, cascade="all, delete-orphan")
-    description = db.relationship('QuestDescription', backref='quest', lazy=True, cascade="all, delete-orphan")
+    description = db.relationship('QuestDescription', backref='quest', lazy=True, cascade="all, delete-orphan", order_by="QuestDescription.timestamp.desc()")
 
     def __init__(self, title, description):
         self.title = title
@@ -33,37 +33,46 @@ class Quest(db.Model):
         db.session.flush()
         db.session.commit()
 
+        # Save the initial description
         self.save_initial_description(description)
 
     def save_initial_description(self, description):
-       if description: 
-        initial_description_entry = QuestDescription(
-            quest_id=self.id,
-            content=description,
-            timestamp=datetime.utcnow()
-        )
-        db.session.add(initial_description_entry)
-        db.session.commit()
+        if description:  # Check if the description is not empty
+            initial_description_entry = QuestDescription(
+                quest_id=self.id,
+                content=description,  # Save the description text in the 'content' column
+                timestamp=datetime.utcnow()
+            )
+            db.session.add(initial_description_entry)
+            db.session.commit()
 
-    def update_description(self, questid, new_description):
-    # Save the current description with a timestamp before updating
-       if self.description:
-        old_description_entry = QuestDescription(
-            quest_id=questid,
-            content=self.description[-1].content if self.description else '',  # Get the last description if exists
-            timestamp=self.get_current_description_timestamp()  # Maintain the original timestamp
-        )
-        db.session.add(old_description_entry)
+    def update_description(self, questtempid, new_description):
+        # Save the current description with its timestamp before updating
+        if self.description:
+            old_description_entry = QuestDescription(
+                quest_id=questtempid,
+                content=self.description[-1].content if self.description else '',  # Get the last description if it exists
+                timestamp=self.get_current_description_timestamp()
+            )
+            db.session.add(old_description_entry)
 
         # Add the new description as a new QuestDescription object
         new_description_entry = QuestDescription(
             quest_id=self.id,
-            content=new_description,
+            content=new_description,  # Save the new description text in the 'content' column
             timestamp=datetime.utcnow()
         )
         db.session.add(new_description_entry)
         db.session.commit()
+
+        # Ensure the relationship is updated (not strictly necessary but keeps the session synced)
         self.description.append(new_description_entry)
+
+    def get_current_description(self):
+        """Retrieve the most recent description."""
+        if self.description:
+            return self.description[0].content  # Get the most recent description
+        return None
 
     def get_current_description_timestamp(self):
         # Retrieve the timestamp of the most recent description from the database
@@ -153,9 +162,10 @@ def quests():
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
-        new_quest = Quest(title=title, description=description)
+        new_quest = Quest(title=title, description="a")
         db.session.add(new_quest)
         db.session.commit()
+        new_quest.update_description(new_quest.id, description)
         flash("Quest added successfully", "success")
         return redirect(url_for('quests'))
     quests = Quest.query.all()
