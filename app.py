@@ -36,6 +36,7 @@ class Quest(db.Model):
         self.save_initial_description(description)
 
     def save_initial_description(self, description):
+       if description: 
         initial_description_entry = QuestDescription(
             quest_id=self.id,
             content=description,
@@ -44,10 +45,11 @@ class Quest(db.Model):
         db.session.add(initial_description_entry)
         db.session.commit()
 
-    def update_description(self, questtempid, new_description):
+    def update_description(self, questid, new_description):
     # Save the current description with a timestamp before updating
+       if self.description:
         old_description_entry = QuestDescription(
-            quest_id=questtempid,
+            quest_id=questid,
             content=self.description[-1].content if self.description else '',  # Get the last description if exists
             timestamp=self.get_current_description_timestamp()  # Maintain the original timestamp
         )
@@ -61,6 +63,7 @@ class Quest(db.Model):
         )
         db.session.add(new_description_entry)
         db.session.commit()
+        self.description.append(new_description_entry)
 
     def get_current_description_timestamp(self):
         # Retrieve the timestamp of the most recent description from the database
@@ -395,8 +398,7 @@ def analyze_journal_entry(entry):
         for quest_title, new_description in results['quest_descriptions'].items():
             quest = next((q for q in quests if q.title.lower() == quest_title.lower()), None)
             if quest:
-                questtempid = quest.id
-                quest.update_description(questtempid, new_description)
+                quest.update_description(quest.id, new_description)
             else:
                 print(f"Quest '{quest_title}' not found for updating description")
 
