@@ -462,7 +462,7 @@ def status():
 def generate_life_overview(quests, tasks, journal_entries):
     quest_data = [{
         "title": quest.title, 
-        "description": quest.description,
+        "description": quest.get_current_description(),
         "tasks": [{"content": task.content, "completed": task.completed} for task in quest.tasks],
         "memos": [memo.content for memo in quest.memos]
     } for quest in quests]
