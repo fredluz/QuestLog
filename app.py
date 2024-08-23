@@ -7,128 +7,27 @@ import json
 from dotenv import load_dotenv
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from flask_migrate import Migrate
-
-
 load_dotenv()
+from models.db import db
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///quest_log.db'
+
 app.secret_key = os.getenv("SECRET_KEY")  # Replace with a real secret key
-db = SQLAlchemy(app)
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 migrate = Migrate(app, db)
+
+from models.quest import Quest
+from models.task import Task
+from models.memo import Memo
+from models.quest_description import QuestDescription
+from models.journal_entry import JournalEntry
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 OpenAI.api_key = openai_api_key
-
-# Database Models
-class Quest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    tasks = db.relationship('Task', backref='quest', lazy=True, cascade="all, delete-orphan")
-    memos = db.relationship('Memo', backref='quest', lazy=True, cascade="all, delete-orphan")
-    description = db.relationship('QuestDescription', backref='quest', lazy=True, cascade="all, delete-orphan", order_by="QuestDescription.timestamp.desc()")
-
-    def __init__(self, title, description):
-        self.title = title
-        db.session.add(self)
-        db.session.flush()
-        db.session.commit()
-
-        # Save the initial description
-        self.save_initial_description(description)
-
-    def save_initial_description(self, description):
-        if description:  # Check if the description is not empty
-            initial_description_entry = QuestDescription(
-                quest_id=self.id,
-                content=description,  # Save the description text in the 'content' column
-                timestamp=datetime.utcnow()
-            )
-            db.session.add(initial_description_entry)
-            db.session.commit()
-
-    def update_description(self, questtempid, new_description):
-        # Save the current description with its timestamp before updating
-        if self.description:
-            old_description_entry = QuestDescription(
-                quest_id=questtempid,
-                content=self.description[-1].content if self.description else '',  # Get the last description if it exists
-                timestamp=self.get_current_description_timestamp()
-            )
-            db.session.add(old_description_entry)
-
-        # Add the new description as a new QuestDescription object
-        new_description_entry = QuestDescription(
-            quest_id=self.id,
-            content=new_description,  # Save the new description text in the 'content' column
-            timestamp=datetime.utcnow()
-        )
-        db.session.add(new_description_entry)
-        db.session.commit()
-
-        # Ensure the relationship is updated (not strictly necessary but keeps the session synced)
-        self.description.append(new_description_entry)
-
-    def get_current_description(self):
-        """Retrieve the most recent description."""
-        if self.description:
-            return self.description[0].content  # Get the most recent description
-        return None
-
-    def get_current_description_timestamp(self):
-        # Retrieve the timestamp of the most recent description from the database
-        latest_description = QuestDescription.query.filter_by(
-            quest_id=self.id
-        ).order_by(QuestDescription.timestamp.desc()).first()
-        
-        if latest_description:
-            return latest_description.timestamp
-        else:
-            return datetime.utcnow()  # Fallback, though this case shouldn't occur
-    def add_task(self, content, scheduled_date=None):
-        new_task = Task(content=content, scheduled_date=scheduled_date, quest_id=self.id)
-        db.session.add(new_task)
-
-    def get_tasks(self):
-        return self.tasks
-        
-
-    def add_memo(self, content):
-        new_memo = Memo(content=content, quest_id=self.id)
-        db.session.add(new_memo)
-
-    def get_memos(self):
-        return self.memos
-
-
-class JournalEntry(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-
-    
-class QuestDescription(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    quest_id = db.Column(db.Integer, db.ForeignKey('quest.id', ondelete='CASCADE', name='fk_quest_description_quest'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    scheduled_date = db.Column(db.DateTime, nullable=True)
-    completed = db.Column(db.Boolean, default=False)
-    quest_id = db.Column(db.Integer, db.ForeignKey('quest.id', ondelete='CASCADE', name='fk_task_quest'), nullable=False)
-
-class Memo(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    quest_id = db.Column(db.Integer, db.ForeignKey('quest.id', ondelete='CASCADE', name='fk_memo_quest'), nullable=False)
-
-# Routes
-
-from flask import current_app
-from sqlalchemy import text
-
 
 @app.route('/')
 def home():
