@@ -10,19 +10,17 @@ from flask_migrate import Migrate
 load_dotenv()
 
 from models.db import db
+from models.conversation import Conversation
+from models.chat import ChatMessage
 
 from status import generate_status
 from journal_analysis import analyze_entry
 
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///quest_log.db'
-
 app.secret_key = os.getenv("SECRET_KEY")  # Replace with a real secret key
-db.init_app(app)
 
-with app.app_context():
-    db.create_all()
+db.init_app(app)
 migrate = Migrate(app, db)
 
 from models.quest import Quest
@@ -49,7 +47,10 @@ from task_functions import (
     T_tasks,
     T_add_task,
     T_delete_task
+)
 
+from chat_functions import (
+    api_chat
 )
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -57,13 +58,11 @@ OpenAI.api_key = openai_api_key
 
 @app.route('/')
 def home():
-    print(os.getenv("OPENAI_API_KEY"))
     return render_template('home.html')
 
 @app.route('/journal', methods=['GET', 'POST'])
 def journal():
     return J_journal()
-        
 
 @app.route('/quests', methods=['GET', 'POST'])
 def quests():
@@ -79,7 +78,6 @@ def rename_quest(quest_id):
 
 @app.route('/tasks')
 def tasks():
-    
     return T_tasks()
 
 @app.route('/quest/<int:quest_id>/delete', methods=['POST'])
@@ -98,6 +96,14 @@ def delete_memo(memo_id):
 def delete_journal_entry(entry_id):
     return J_delete_journal_entry(entry_id)
 
+@app.route('/chat', methods=['GET'])
+def chat():
+    return render_template('chat.html')
+
+@app.route('/api/chat', methods=['GET', 'POST'])
+def chat_api_route():
+    return api_chat()
+
 # LLM Integration
 
 #def to_dict(model):
@@ -108,7 +114,6 @@ def delete_journal_entry(entry_id):
 def analyze_journal_entry(entry):
     return analyze_entry(entry)
     
-
 @app.route('/quest/<int:quest_id>/edit_description', methods=['POST'])
 def edit_quest_description(quest_id):
     return Q_edit_quest_description(quest_id)
@@ -120,7 +125,6 @@ def quest_details(quest_id):
 @app.route('/status')
 def status():
     return generate_status()
-
 
 def parse_date(date_string):
     date_formats = [
@@ -138,8 +142,6 @@ def parse_date(date_string):
             return datetime.strptime(date_string, fmt)
         except ValueError:
             pass
-    
-    
 
 if __name__ == '__main__':
     with app.app_context():

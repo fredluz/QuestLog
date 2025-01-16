@@ -7,21 +7,48 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #0f172a;
             color: #e2e8f0;
         }
-        .chat-card {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            transition: all 0.3s ease;
+        .chat-message-user {
+            background-color: #3b82f6;
+            color: #ffffff;
+            border-radius: 1.5rem;
+            padding: 0.75rem 1rem;
+            max-width: 70%;
+            align-self: flex-end;
         }
-        .chat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        .chat-message-assistant {
+            background-color: #374151;
+            color: #ffffff;
+            border-radius: 1.5rem;
+            padding: 0.75rem 1rem;
+            max-width: 70%;
+            align-self: flex-start;
+        }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            max-height: 60vh;
+            padding-right: 1rem;
+        }
+        .conversation-list {
+            max-height: 30vh;
+            overflow-y: auto;
+        }
+        .conversation-item {
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .conversation-item:hover {
+            background-color: #4b5563;
         }
     </style>
 </head>
@@ -40,15 +67,52 @@
     </nav>
 
     <main class="flex-grow container mx-auto mt-8 px-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
         <h2 class="text-3xl font-bold mb-6">AI Chat Interface</h2>
 
-        <div class="chat-card rounded-lg p-6 mb-8">
-            <div id="chat-messages" class="h-96 overflow-y-auto mb-4 p-4 bg-gray-800 rounded-lg"></div>
-            <div class="flex">
-                <input type="text" id="user-input" placeholder="Type your message..." class="flex-grow p-2 mr-2 bg-gray-800 text-white rounded">
-                <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
-                    Send
-                </button>
+        <div class="flex mb-4">
+            <button onclick="startNewConversation()"
+                    class="mr-4 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition">
+                New Conversation
+            </button>
+            <select id="conversation-select" onchange="loadConversation(this.value)"
+                    class="bg-gray-800 text-white p-2 rounded">
+                <option value="">Select Conversation</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+
+        <div id="chat-container" class="chat-container border border-gray-600 rounded-lg p-4 mb-8">
+            <!-- ChatGPT-like messages go here -->
+        </div>
+
+        <div class="flex">
+            <input type="text" id="chat-input"
+                   class="flex-grow p-2 bg-gray-800 text-white rounded mr-2"
+                   placeholder="Type your message...">
+            <button onclick="sendMessage()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
+                Send
+            </button>
+        </div>
+
+        <div class="border-t border-gray-600 pt-4 mt-8">
+            <button type="button" onclick="togglePrevConv()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded mb-2">
+                Show/Hide Previous Conversations
+            </button>
+            <div id="prev-conversations" class="hidden conversation-list border border-gray-700 p-4 rounded">
+                <!-- Clickable list of previous conversations -->
+                <ul id="prev-conv-list" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </ul>
             </div>
         </div>
     </main>
@@ -56,46 +120,126 @@
     <footer class="bg-gray-800 text-white py-4 text-center mt-8">
         <p>&copy; 2024 QuestLog. All Rights Reserved. | <a href="#" class="text-blue-400 hover:text-blue-300">Privacy Policy</a> | <a href="#" class="text-blue-400 hover:text-blue-300">Terms of Service</a></p>
     </footer>
-
+    
     <script>
-        let conversationHistory = [];
+    let currentConversationId = null;
 
-        async function sendMessage() {
-            const userInput = document.getElementById('user-input');
-            const chatMessages = document.getElementById('chat-messages');
-            
-            const userMessage = userInput.value;
-            userInput.value = '';
+    async function populateConversations() {
+        try {
+            const resp = await fetch('/api/chat?action=list');
+            const data = await resp.json();
+            const select = document.getElementById('conversation-select');
+            const convList = document.getElementById('prev-conv-list');
+            convList.innerHTML = '';
+            data.conversations.forEach(conv => {
+                // Populate select dropdown
+                const option = document.createElement('option');
+                option.value = conv.id;
+                option.textContent = conv.title;
+                select.appendChild(option);
 
-            // Display user message
-            chatMessages.innerHTML += `<p class="mb-2"><strong class="text-blue-400">You:</strong> ${userMessage}</p>`;
-
-            try {
-                const response = await axios.post('/api/chat', {
-                    message: userMessage,
-                    history: conversationHistory
-                });
-
-                const aiResponse = response.data.response;
-                conversationHistory = response.data.history;
-
-                // Display AI response
-                chatMessages.innerHTML += `<p class="mb-2"><strong class="text-green-400">AI:</strong> ${aiResponse}</p>`;
-            } catch (error) {
-                console.error('Error:', error);
-                chatMessages.innerHTML += `<p class="mb-2"><strong class="text-red-400">Error:</strong> ${error.message}</p>`;
-            }
-
-            // Scroll to bottom of chat
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+                // Populate previous conversations list
+                const li = document.createElement('li');
+                li.textContent = `${conv.title} (${new Date(conv.created_at).toLocaleString()})`;
+                li.classList.add('conversation-item');
+                li.onclick = () => loadConversation(conv.id);
+                convList.appendChild(li);
+            });
+        } catch (error) {
+            console.error('Error fetching conversations:', error);
         }
+    }
 
-        // Allow sending message with Enter key
-        document.getElementById('user-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
+    async function startNewConversation() {
+        try {
+            const resp = await fetch('/api/chat?action=start');
+            const data = await resp.json();
+            if (data.conversation_id) {
+                currentConversationId = data.conversation_id;
+                document.getElementById('chat-container').innerHTML = '';
+                await populateConversations();
+                document.getElementById('conversation-select').value = currentConversationId;
             }
+        } catch (error) {
+            console.error('Error starting new conversation:', error);
+        }
+    }
+
+    async function sendMessage() {
+        const userInput = document.getElementById('chat-input');
+        const msg = userInput.value.trim();
+        if (!msg || !currentConversationId) return;
+        userInput.value = '';
+
+        // Display user's message
+        displayMessage(msg, 'user');
+
+        try {
+            const resp = await fetch('/api/chat?action=send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: msg,
+                    conversation_id: currentConversationId
+                })
+            });
+            const data = await resp.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            displayMessages(data.chat_log);
+        } catch (err) {
+            alert('Error: ' + err);
+        }
+    }
+
+    async function loadConversation(conv_id) {
+        if (!conv_id) return;
+        currentConversationId = conv_id;
+        try {
+            const resp = await fetch(`/api/chat?action=get&conversation_id=${conv_id}`);
+            const data = await resp.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            renderMessages(data.chat_log);
+        } catch (e) { 
+            console.error(e); 
+        }
+    }
+
+    function displayMessage(message, role) {
+        const container = document.getElementById('chat-container');
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('mb-4', 'max-w-2xl', role === 'user' ? 'ml-auto' : 'mr-auto');
+        msgDiv.classList.add(role === 'user' ? 'chat-message-user' : 'chat-message-assistant');
+        msgDiv.innerHTML = `
+            <p class="whitespace-pre-wrap">${message}</p>
+            <p class="text-xs text-gray-400 mt-1">${new Date().toLocaleString()}</p>
+        `;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function renderMessages(chatLog) {
+        const container = document.getElementById('chat-container');
+        container.innerHTML = '';
+        chatLog.forEach(entry => {
+            displayMessage(entry.message, entry.role);
         });
+    }
+
+    function togglePrevConv() {
+        const el = document.getElementById('prev-conversations');
+        el.classList.toggle('hidden');
+    }
+
+    // Initialize on page load
+    window.onload = () => {
+        populateConversations();
+    };
     </script>
 </body>
 </html>
