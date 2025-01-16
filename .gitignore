@@ -2,3 +2,4 @@
 migrations
 instance
 __pycache__
+.vscode
