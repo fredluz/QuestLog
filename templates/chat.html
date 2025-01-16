@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestLog - AI Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .chat-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        .chat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">QuestLog</h1>
+            <div>
+                <a href="/" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                <a href="/quests" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Quests</a>
+                <a href="/status" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Status</a>
+                <a href="/journal" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Journal</a>
+                <a href="/chat" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">AI Chat</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto mt-8 px-4">
+        <h2 class="text-3xl font-bold mb-6">AI Chat Interface</h2>
+
+        <div class="chat-card rounded-lg p-6 mb-8">
+            <div id="chat-messages" class="h-96 overflow-y-auto mb-4 p-4 bg-gray-800 rounded-lg"></div>
+            <div class="flex">
+                <input type="text" id="user-input" placeholder="Type your message..." class="flex-grow p-2 mr-2 bg-gray-800 text-white rounded">
+                <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    Send
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 text-center mt-8">
+        <p>&copy; 2024 QuestLog. All Rights Reserved. | <a href="#" class="text-blue-400 hover:text-blue-300">Privacy Policy</a> | <a href="#" class="text-blue-400 hover:text-blue-300">Terms of Service</a></p>
+    </footer>
+
+    <script>
+        let conversationHistory = [];
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const chatMessages = document.getElementById('chat-messages');
+            
+            const userMessage = userInput.value;
+            userInput.value = '';
+
+            // Display user message
+            chatMessages.innerHTML += `<p class="mb-2"><strong class="text-blue-400">You:</strong> ${userMessage}</p>`;
+
+            try {
+                const response = await axios.post('/api/chat', {
+                    message: userMessage,
+                    history: conversationHistory
+                });
+
+                const aiResponse = response.data.response;
+                conversationHistory = response.data.history;
+
+                // Display AI response
+                chatMessages.innerHTML += `<p class="mb-2"><strong class="text-green-400">AI:</strong> ${aiResponse}</p>`;
+            } catch (error) {
+                console.error('Error:', error);
+                chatMessages.innerHTML += `<p class="mb-2"><strong class="text-red-400">Error:</strong> ${error.message}</p>`;
+            }
+
+            // Scroll to bottom of chat
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Allow sending message with Enter key
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
